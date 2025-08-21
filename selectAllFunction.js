@@ -3,10 +3,12 @@
 // @namespace    http://tampermonkey.net/
 // @version      1.1
 // @description  Adds a larger Select All checkbox in the Remarks tab table header
+// @author       Dariz Villarba
 // @match        https://bp.psc.games/admin/*
 // @grant        none
-// @updateURL    https://raw.githubusercontent.com/DarizV1/bbppunderground/refs/heads/main/selectAllFunction.js
-// @downloadURL  https://raw.githubusercontent.com/DarizV1/bbppunderground/refs/heads/main/selectAllFunction.js
+// @run-at       document-idle
+// @updateURL    https://raw.githubusercontent.com/DarizV1/bbppunderground/main/selectAllFunction.js
+// @downloadURL  https://raw.githubusercontent.com/DarizV1/bbppunderground/main/selectAllFunction.js
 // ==/UserScript==
 
 (function() {
