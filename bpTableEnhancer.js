@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Batang Pinoy Table Enhancer (With Auto-Detected Filters + Buttons)
 // @namespace    http://tampermonkey.net/
-// @version      1.8
+// @version      1.9
 // @description  Enhances BP admin tables by adding row selectors, auto-detecting cluster/LGU/sport filters, and ensuring correct info display. Improves navigation and usability for admins managing multiple entries.
 // @author       Dariz Villarba
 // @match        https://bp.psc.games/admin/index.php*
@@ -68,7 +68,7 @@
             });
 
 
-            console.log("✅ DataTable enhanced: auto-detected filters + buttons OK");
+            console.log("DataTable enhanced: auto-detected filters + buttons OK");
             return true;
         }
         return false;
