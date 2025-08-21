@@ -5,6 +5,8 @@
 // @description  Adds a Select All checkbox in the Remarks tab table header
 // @match        https://bp.psc.games/admin/*
 // @grant        none
+// @updateURL    https://raw.githubusercontent.com/DarizV1/bbppunderground/refs/heads/main/selectAllFunction.js
+// @downloadURL  https://raw.githubusercontent.com/DarizV1/bbppunderground/refs/heads/main/selectAllFunction.js
 // ==/UserScript==
 
 (function() {
