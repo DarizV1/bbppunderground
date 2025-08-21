@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         BP Remarks Tab Select All
 // @namespace    http://tampermonkey.net/
-// @version      1.0
-// @description  Adds a Select All checkbox in the Remarks tab table header
+// @version      1.1
+// @description  Adds a larger Select All checkbox in the Remarks tab table header
 // @match        https://bp.psc.games/admin/*
 // @grant        none
 // @updateURL    https://raw.githubusercontent.com/DarizV1/bbppunderground/refs/heads/main/selectAllFunction.js
@@ -25,20 +25,19 @@
         const tbody = table.querySelector('tbody');
         if (!thead || !tbody) return;
 
-        const headerCells = thead.querySelectorAll('th');
-        if (headerCells.length < 3) return;
+        const receivedHeader = thead.querySelectorAll('th')[2]; // 3rd column
+        if (!receivedHeader || receivedHeader.querySelector('#select-all-checkbox')) return;
 
-        const receivedHeader = headerCells[2]; // 3rd column
-        if (receivedHeader.querySelector('#select-all-checkbox')) return; // Already added
-
-        // Create Select All checkbox
+        // Create a larger Select All checkbox
         const checkbox = document.createElement('input');
         checkbox.type = 'checkbox';
         checkbox.id = 'select-all-checkbox';
-        checkbox.style.marginLeft = '5px';
         checkbox.title = 'Select/Unselect all';
+        checkbox.style.transform = 'scale(1.5)'; // Makes it bigger
+        checkbox.style.marginLeft = '8px';
+        checkbox.style.cursor = 'pointer';
 
-        // Put checkbox inside header
+        // Add label and checkbox
         receivedHeader.textContent = 'Received ';
         receivedHeader.appendChild(checkbox);
 
@@ -48,16 +47,13 @@
         });
     }
 
-    // Wait for the tab to load
-    function waitForTab() {
+    // Check periodically until the tab is loaded
+    const interval = setInterval(() => {
         const tab = document.querySelector(tabSelector);
         if (tab) {
             addSelectAllCheckbox();
-        } else {
-            setTimeout(waitForTab, 500);
+            clearInterval(interval);
         }
-    }
-
-    waitForTab();
+    }, 500);
 
 })();
