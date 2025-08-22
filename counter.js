@@ -5,6 +5,9 @@
 // @description  Stable LGU counts with color coding (red=0, orange=1-50, blue=51-100, green=101+).
 // @match        https://bp.psc.games/admin/index.php*
 // @grant        none
+// @run-at       document-idle
+// @updateURL    https://raw.githubusercontent.com/DarizV1/bbppunderground/refs/heads/main/counter.js
+// @downloadURL  https://raw.githubusercontent.com/DarizV1/bbppunderground/refs/heads/main/counter.js
 // ==/UserScript==
 
 (function () {
