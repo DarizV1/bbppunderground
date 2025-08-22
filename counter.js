@@ -198,3 +198,5 @@
     if (tries >= 20) clearInterval(timer);
   }, 400);
 })();
+
+//Counter
