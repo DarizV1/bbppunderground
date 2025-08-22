@@ -4,7 +4,7 @@
 // @version      1.9
 // @description  Stable LGU counts with color coding (red=0, orange=1-50, blue=51-100, green=101+) and copy-to-clipboard button.
 // @match        https://bp.psc.games/admin/index.php*
-/// @author       Dariz Villarba
+// @author       Dariz Villarba
 // @grant        none
 // @run-at       document-idle
 // @updateURL    https://raw.githubusercontent.com/DarizV1/bbppunderground/refs/heads/main/counter.js
