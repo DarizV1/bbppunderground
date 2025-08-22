@@ -1,8 +1,8 @@
 // ==UserScript==
-// @name         LGU Dropdown Stable Counts (BP Admin) — With Colors
+// @name         LGU Dropdown Stable Counts (BP Admin) — With Colors + Copy Button
 // @namespace    http://tampermonkey.net/
-// @version      1.7
-// @description  Stable LGU counts with color coding (red=0, orange=1-50, blue=51-100, green=101+).
+// @version      1.9
+// @description  Stable LGU counts with color coding (red=0, orange=1-50, blue=51-100, green=101+) and copy-to-clipboard button.
 // @match        https://bp.psc.games/admin/index.php*
 // @grant        none
 // @run-at       document-idle
@@ -33,12 +33,12 @@
     return -1;
   }
 
-    function getColorForCount(count) {
+  function getColorForCount(count) {
     if (count === 0) return '#d32f2f';     // red
     if (count >= 1 && count <= 50) return '#ef6c00';  // dark orange
     if (count >= 51 && count <= 100) return '#1565c0'; // navy blue
     return '#2e7d32'; // dark green
-    }
+  }
 
   function updateDropdownWithCounts(counts) {
     const select = document.querySelector('#lguFilter');
@@ -54,15 +54,13 @@
 
       if (normalize(base) === 'all' || base === '') {
         opt.textContent = 'All';
-        opt.style.color = ''; // reset default color
+        opt.style.color = '';
         return;
       }
 
       const key = normalize(base);
       const count = counts[key] || 0;
       opt.textContent = `${base} (${count})`;
-
-      // Apply color
       opt.style.color = getColorForCount(count);
     });
   }
@@ -119,6 +117,41 @@
     return counts;
   }
 
+  // Add button for copy-paste to Excel
+  function addCopyButton(counts) {
+    const select = document.querySelector('#lguFilter');
+    if (!select) return;
+
+    if (document.querySelector('#copyLguBtn')) return;
+
+    const btn = document.createElement('button');
+    btn.id = 'copyLguBtn';
+    btn.textContent = 'Copy LGUs';
+    btn.style.marginLeft = '8px';
+    btn.style.padding = '4px 8px';
+    btn.style.border = '1px solid #444';
+    btn.style.borderRadius = '4px';
+    btn.style.cursor = 'pointer';
+    btn.style.background = '#f5f5f5';
+
+    btn.addEventListener('click', () => {
+      let rows = [];
+      Array.from(select.options).forEach((opt) => {
+        const txt = opt.textContent.trim();
+        if (txt.toLowerCase() !== 'all') {
+          rows.push(txt.replace(/\s*\(\d+\)$/, '') + "\t" + (txt.match(/\((\d+)\)/)?.[1] || '0'));
+        }
+      });
+      const out = rows.join("\n");
+      navigator.clipboard.writeText(out).then(() => {
+        btn.textContent = 'Copied!';
+        setTimeout(() => btn.textContent = 'Copy LGUs', 1500);
+      });
+    });
+
+    select.parentNode.insertBefore(btn, select.nextSibling);
+  }
+
   let dt = null;
   let baselineCounts = {};
   const TABLE_SEL = '#list';
@@ -134,6 +167,7 @@
 
     baselineCounts = computeBaselineCounts(dt, tableElem);
     updateDropdownWithCounts(baselineCounts);
+    addCopyButton(baselineCounts);
 
     dt.on('xhr.dt', () => {
       baselineCounts = computeBaselineCounts(dt, tableElem);
