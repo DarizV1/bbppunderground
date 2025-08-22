@@ -1,5 +1,5 @@
 // ==UserScript==
-// @name         LGU Dropdown Stable Counts (BP Admin) — With Colors + Copy Button
+// @name         DROPDOWN - Counter
 // @namespace    http://tampermonkey.net/
 // @version      1.9
 // @description  Stable LGU counts with color coding (red=0, orange=1-50, blue=51-100, green=101+) and copy-to-clipboard button.
