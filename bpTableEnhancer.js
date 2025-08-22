@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         Batang Pinoy Table Enhancer
 // @namespace    http://tampermonkey.net/
-// @version      2.5
-// @description  Enhances BP admin tables with row coloring (pastel sports colors), filters, borders, and "View" button opening in new tab.
+// @version      2.7
+// @description  Enhances BP admin tables with row coloring (pastel sports colors), striped fallback rows, filters, borders, hover effect, and "View" button opening in new tab.
 // @author       Dariz Villarba
 // @match        https://bp.psc.games/admin/index.php*
 // @grant        none
@@ -55,7 +55,7 @@
         return (yiq >= 128) ? "#000000" : "#ffffff";
     }
 
-    // 🔹 Inject custom CSS for table borders
+    // 🔹 Inject custom CSS
     function injectTableCSS() {
         const style = document.createElement("style");
         style.innerHTML = `
@@ -70,6 +70,19 @@
             #list th {
                 background-color: #f5f5f5 !important;
                 font-weight: bold;
+            }
+            /* Default striping only for rows without custom sport color */
+            #list tbody tr.striped-even {
+                background-color: #f9f9f9 !important;
+            }
+            #list tbody tr.striped-odd {
+                background-color: #ffffff !important;
+            }
+            /* 🔹 Hover effect */
+            #list tbody tr:hover {
+                filter: brightness(95%) !important;
+                font-weight: bold;
+                cursor: pointer;
             }
         `;
         document.head.appendChild(style);
@@ -125,23 +138,29 @@
                 if (sportCol !== -1) table.column(sportCol).search(val ? val : '', false, true).draw();
             });
 
-            // Colorize rows
+            // Row coloring + striped fallback
             table.on('draw', function () {
+                let rowIndex = 0;
                 table.rows().every(function () {
                     let data = this.data();
+                    let $row = $(this.node());
                     if (sportCol !== -1 && data[sportCol]) {
                         let sport = data[sportCol].trim();
                         let color = sportColors[sport];
                         if (color) {
                             let textColor = getContrastYIQ(color);
-                            $(this.node()).css({
+                            $row.css({
                                 "background-color": color,
                                 "color": textColor
-                            });
+                            }).removeClass("striped-even striped-odd");
                         } else {
-                            $(this.node()).css({"background-color": "", "color": ""});
+                            // fallback striping
+                            $row.css({"color": ""});
+                            $row.removeAttr("style");
+                            $row.addClass(rowIndex % 2 === 0 ? "striped-even" : "striped-odd");
                         }
                     }
+                    rowIndex++;
                 });
 
                 // Force "View" links to open in new tab
