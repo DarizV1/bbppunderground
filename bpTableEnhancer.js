@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Batang Pinoy Table Enhancer
 // @namespace    http://tampermonkey.net/
-// @version      2.7
+// @version      2.8
 // @description  Enhances BP admin tables with row coloring (pastel sports colors), striped fallback rows, filters, borders, hover effect, and "View" button opening in new tab.
 // @author       Dariz Villarba
 // @match        https://bp.psc.games/admin/index.php*
@@ -71,14 +71,12 @@
                 background-color: #f5f5f5 !important;
                 font-weight: bold;
             }
-            /* Default striping only for rows without custom sport color */
             #list tbody tr.striped-even {
                 background-color: #f9f9f9 !important;
             }
             #list tbody tr.striped-odd {
                 background-color: #ffffff !important;
             }
-            /* 🔹 Hover effect */
             #list tbody tr:hover {
                 filter: brightness(95%) !important;
                 font-weight: bold;
@@ -114,28 +112,45 @@
             let lguCol = headers.indexOf("lgu");
             let sportCol = headers.indexOf("sport");
 
+            // 🔹 Normalizer & regex builder
+            const norm = s => (s || '').toString().replace(/\s+/g, ' ').trim();
+            const makeLooseEqPattern = (raw) => {
+                const t = norm(raw);
+                const esc = $.fn.dataTable.util.escapeRegex(t).replace(/ +/g, '\\s+');
+                return '^\\s*' + esc + '\\s*$';
+            };
+
             // Cluster filter
             $('#clusterFilter').off('change').on('change', function () {
-                let val = $(this).val();
-                if (clusterCol !== -1) table.column(clusterCol).search(val ? val : '', false, true).draw();
+                const val = $(this).val();
+                if (clusterCol !== -1) {
+                    table.column(clusterCol).search(
+                        val ? makeLooseEqPattern(val) : '',
+                        true, false, true
+                    ).draw();
+                }
             });
 
-            // LGU filter (exact)
+            // LGU filter
             $('#lguFilter').off('change').on('change', function () {
-                let val = $(this).val();
+                const val = $(this).val();
                 if (lguCol !== -1) {
-                    if (val) {
-                        table.column(lguCol).search('^' + $.fn.dataTable.util.escapeRegex(val) + '$', true, false).draw();
-                    } else {
-                        table.column(lguCol).search('', true, false).draw();
-                    }
+                    table.column(lguCol).search(
+                        val ? makeLooseEqPattern(val) : '',
+                        true, false, true
+                    ).draw();
                 }
             });
 
             // Sport filter
             $('#sportFilter').off('change').on('change', function () {
-                let val = $(this).val();
-                if (sportCol !== -1) table.column(sportCol).search(val ? val : '', false, true).draw();
+                const val = $(this).val();
+                if (sportCol !== -1) {
+                    table.column(sportCol).search(
+                        val ? makeLooseEqPattern(val) : '',
+                        true, false, true
+                    ).draw();
+                }
             });
 
             // Row coloring + striped fallback
@@ -154,10 +169,8 @@
                                 "color": textColor
                             }).removeClass("striped-even striped-odd");
                         } else {
-                            // fallback striping
-                            $row.css({"color": ""});
-                            $row.removeAttr("style");
-                            $row.addClass(rowIndex % 2 === 0 ? "striped-even" : "striped-odd");
+                            $row.css({"background-color": "", "color": ""})
+                                .addClass(rowIndex % 2 === 0 ? "striped-even" : "striped-odd");
                         }
                     }
                     rowIndex++;
