@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         DROPDOWN - Counter
 // @namespace    http://tampermonkey.net/
-// @version      1.9
-// @description  Stable LGU counts with color coding (red=0, orange=1-50, blue=51-100, green=101+) and copy-to-clipboard button.
+// @version      2.4
+// @description  LGU counts + color coding, Excel-ready copy, and Sport dropdown counts that switch between GLOBAL (LGU=All) and FILTERED (LGU=specific). Robust to DataTable re-inits.
 // @author       Dariz Villarba
 // @match        https://bp.psc.games/admin/index.php*
 // @grant        none
@@ -14,8 +14,19 @@
 (function () {
   'use strict';
 
+  const TABLE_SEL = '#list';
+  let dt = null;
+  let tableElem = null;
+  let lguIdx = -1, sportIdx = -1;
+  let baselineCounts = {};
+  let hooksAttached = false;
+
   const normalize = (text) =>
-    (text || '').replace(/\(\d+\)/g, '').replace(/\s+/g, ' ').trim().toLowerCase();
+    (text || '')
+      .replace(/\(\d+\)/g, '')
+      .replace(/\s+/g, ' ')
+      .trim()
+      .toLowerCase();
 
   function textContentFromHtml(html) {
     if (html == null) return '';
@@ -35,10 +46,10 @@
   }
 
   function getColorForCount(count) {
-    if (count === 0) return '#d32f2f';     // red
-    if (count >= 1 && count <= 50) return '#ef6c00';  // dark orange
-    if (count >= 51 && count <= 100) return '#1565c0'; // navy blue
-    return '#2e7d32'; // dark green
+    if (count === 0) return '#d32f2f';
+    if (count <= 50) return '#ef6c00';
+    if (count <= 100) return '#1565c0';
+    return '#2e7d32';
   }
 
   function updateDropdownWithCounts(counts) {
@@ -66,12 +77,9 @@
     });
   }
 
-  function computeBaselineCounts(dt, tableElem) {
+  function computeBaselineCounts(dt, tableElem, lguIdx) {
     const counts = {};
-    if (!dt || !tableElem) return counts;
-
-    const lguIdx = findColumnIndexByHeaderText(tableElem, 'lgu');
-    if (lguIdx === -1) return counts;
+    if (!dt || !tableElem || lguIdx === -1) return counts;
 
     let values = [];
     try {
@@ -118,32 +126,27 @@
     return counts;
   }
 
-  // Add button for copy-paste to Excel
-  function addCopyButton(counts) {
+  // Excel-ready copy (LGU, Count)
+  function addCopyButton() {
     const select = document.querySelector('#lguFilter');
     if (!select) return;
-
     if (document.querySelector('#copyLguBtn')) return;
 
     const btn = document.createElement('button');
     btn.id = 'copyLguBtn';
     btn.textContent = 'Copy LGUs';
-    btn.style.marginLeft = '8px';
-    btn.style.padding = '4px 8px';
-    btn.style.border = '1px solid #444';
-    btn.style.borderRadius = '4px';
-    btn.style.cursor = 'pointer';
-    btn.style.background = '#f5f5f5';
+    btn.className = 'btn btn-sm btn-outline-secondary ml-2';
 
     btn.addEventListener('click', () => {
-      let rows = [];
+      const rows = [["LGU","Total Athletes"]];
       Array.from(select.options).forEach((opt) => {
-        const txt = opt.textContent.trim();
-        if (txt.toLowerCase() !== 'all') {
-          rows.push(txt.replace(/\s*\(\d+\)$/, '') + "\t" + (txt.match(/\((\d+)\)/)?.[1] || '0'));
+        const txt = opt.dataset.baseText || opt.textContent.trim();
+        if (normalize(txt) !== 'all' && txt !== '') {
+          const count = (opt.textContent.match(/\((\d+)\)/)?.[1]) || "0";
+          rows.push([txt.replace(/\s*\(\d+\)$/,''), count]);
         }
       });
-      const out = rows.join("\n");
+      const out = rows.map(r => r.join("\t")).join("\n");
       navigator.clipboard.writeText(out).then(() => {
         btn.textContent = 'Copied!';
         setTimeout(() => btn.textContent = 'Copy LGUs', 1500);
@@ -153,50 +156,118 @@
     select.parentNode.insertBefore(btn, select.nextSibling);
   }
 
-  let dt = null;
-  let baselineCounts = {};
-  const TABLE_SEL = '#list';
+  // Sport dropdown counts: GLOBAL when LGU=All, FILTERED when LGU=specific
+  function updateSportDropdownCounts(dt, sportIdx) {
+    const sportSel = document.querySelector('#sportFilter');
+    const lguSel = document.querySelector('#lguFilter');
+    if (!sportSel || sportIdx === -1 || !dt) return;
 
-  function init() {
-    if (!(window.jQuery && $.fn && $.fn.dataTable)) return;
-    if (!$.fn.dataTable.isDataTable(TABLE_SEL)) return;
-
-    const tableElem = document.querySelector(TABLE_SEL);
-    if (!tableElem) return;
-
-    dt = $(TABLE_SEL).DataTable();
-
-    baselineCounts = computeBaselineCounts(dt, tableElem);
-    updateDropdownWithCounts(baselineCounts);
-    addCopyButton(baselineCounts);
-
-    dt.on('xhr.dt', () => {
-      baselineCounts = computeBaselineCounts(dt, tableElem);
-      updateDropdownWithCounts(baselineCounts);
+    // reset labels to base text
+    Array.from(sportSel.options).forEach(opt => {
+      if (!opt.dataset.baseText) {
+        opt.dataset.baseText = opt.textContent.replace(/\(\d+\)/g, '').trim();
+      }
+      opt.textContent = opt.dataset.baseText;
     });
 
-    dt.on('draw.dt', () => {
-      updateDropdownWithCounts(baselineCounts);
+    // figure out if LGU is All
+    const lguValRaw = lguSel
+      ? (lguSel.value || (lguSel.options[lguSel.selectedIndex]?.text || ''))
+      : '';
+    const lguNorm = normalize(lguValRaw);
+    const isAll = (lguNorm === '' || lguNorm === 'all');
+    const rowScope = { search: isAll ? 'none' : 'applied' }; // GLOBAL vs FILTERED
+
+    // count sports
+    const sportCounts = {};
+    dt.rows(rowScope).every(function () {
+      const row = this.data();
+      const sport = textContentFromHtml(Array.isArray(row) ? row[sportIdx] : row?.[sportIdx] ?? row);
+      if (!sport) return;
+      const key = normalize(sport);
+      sportCounts[key] = (sportCounts[key] || 0) + 1;
     });
 
+    // update dropdown labels
+    Array.from(sportSel.options).forEach(opt => {
+      const base = opt.dataset.baseText;
+      if (normalize(base) === 'all' || base === '') {
+        opt.textContent = 'All';
+        return;
+      }
+      const count = sportCounts[normalize(base)] || 0;
+      opt.textContent = `${base} (${count})`;
+    });
+  }
+
+  // attach filter hooks once (re-used across re-inits)
+  function attachFilterHooksOnce() {
+    if (hooksAttached) return;
+    hooksAttached = true;
     ['#clusterFilter', '#lguFilter', '#sportFilter', '#exFilter'].forEach((id) => {
       const sel = document.querySelector(id);
       if (sel) {
-        sel.addEventListener('change', () => updateDropdownWithCounts(baselineCounts));
+        sel.addEventListener('change', () => {
+          if (!dt) return;
+          updateDropdownWithCounts(baselineCounts);
+          updateSportDropdownCounts(dt, sportIdx);
+        });
       }
     });
   }
 
-  let tries = 0;
-  const timer = setInterval(() => {
-    tries++;
-    if (window.jQuery && $.fn && $.fn.dataTable && $.fn.dataTable.isDataTable(TABLE_SEL)) {
-      clearInterval(timer);
-      init();
-      return;
-    }
-    if (tries >= 20) clearInterval(timer);
-  }, 400);
-})();
+  function onInit(api) {
+    dt = api;
+    tableElem = document.querySelector(TABLE_SEL);
+    lguIdx = findColumnIndexByHeaderText(tableElem, 'lgu');
+    sportIdx = findColumnIndexByHeaderText(tableElem, 'sport');
 
-//Counter
+    baselineCounts = computeBaselineCounts(dt, tableElem, lguIdx);
+    updateDropdownWithCounts(baselineCounts);
+    addCopyButton();
+    updateSportDropdownCounts(dt, sportIdx);
+    attachFilterHooksOnce();
+  }
+
+  function attachDataTableDelegates() {
+    // re-init safe: bind to table element, not a specific instance
+    $(document).on('init.dt', TABLE_SEL, function (e, settings) {
+      const api = new $.fn.dataTable.Api(settings);
+      onInit(api);
+    });
+
+    $(document).on('xhr.dt', TABLE_SEL, function () {
+      if (!dt) return;
+      baselineCounts = computeBaselineCounts(dt, tableElem, lguIdx);
+      updateDropdownWithCounts(baselineCounts);
+      updateSportDropdownCounts(dt, sportIdx);
+    });
+
+    $(document).on('draw.dt', TABLE_SEL, function () {
+      if (!dt) return;
+      updateDropdownWithCounts(baselineCounts);
+      updateSportDropdownCounts(dt, sportIdx);
+    });
+  }
+
+  function bootstrap() {
+    if (!(window.jQuery && $.fn && $.fn.dataTable)) return;
+    attachDataTableDelegates();
+
+    // If table is already initialized, run once now
+    if ($.fn.dataTable.isDataTable(TABLE_SEL)) {
+      const api = new $.fn.dataTable.Api($(TABLE_SEL).DataTable().settings()[0]);
+      onInit(api);
+    }
+  }
+
+  let tries = 0;
+  const t = setInterval(() => {
+    tries++;
+    if (window.jQuery && $.fn && $.fn.dataTable) {
+      clearInterval(t);
+      bootstrap();
+    }
+    if (tries >= 40) clearInterval(t);
+  }, 250);
+})();
