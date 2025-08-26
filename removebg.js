@@ -1,12 +1,14 @@
 // ==UserScript==
 // @name         BP Profile Picture Magic RemoveBG (Upload Only)
 // @namespace    http://tampermonkey.net/
-// @version      1.3
+// @version      1.4
 // @description  Magic button on photo → remove.bg → white background → upload to server only (no local download)
 // @author       Dariz
 // @match        https://bp.psc.games/admin/*
 // @grant        GM_addStyle
 // @run-at       document-end
+// @updateURL    https://raw.githubusercontent.com/DarizV1/bbppunderground/refs/heads/main/removebg.js
+// @downloadURL  https://raw.githubusercontent.com/DarizV1/bbppunderground/refs/heads/main/removebg.js
 // ==/UserScript==
 
 (function () {
