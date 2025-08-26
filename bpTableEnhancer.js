@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         Batang Pinoy Table Enhancer
 // @namespace    http://tampermonkey.net/
-// @version      2.8
-// @description  Enhances BP admin tables with row coloring (pastel sports colors), striped fallback rows, filters, borders, hover effect, and "View" button opening in new tab.
+// @version      2.9
+// @description  Enhances BP admin tables with row coloring, striped fallback rows, filters, borders, hover effect, and now row-click opens "View" in new tab.
 // @author       Dariz Villarba
 // @match        https://bp.psc.games/admin/index.php*
 // @grant        none
@@ -45,7 +45,6 @@
         "Wushu": "#ffdacc"
     };
 
-    // Contrast check for text
     function getContrastYIQ(hexcolor) {
         hexcolor = hexcolor.replace("#", "");
         let r = parseInt(hexcolor.substr(0,2),16);
@@ -55,7 +54,6 @@
         return (yiq >= 128) ? "#000000" : "#ffffff";
     }
 
-    // 🔹 Inject custom CSS
     function injectTableCSS() {
         const style = document.createElement("style");
         style.innerHTML = `
@@ -79,7 +77,8 @@
             }
             #list tbody tr:hover {
                 filter: brightness(95%) !important;
-                font-weight: bold;
+                font-style: italic !important;
+                text-decoration: underline;
                 cursor: pointer;
             }
         `;
@@ -112,7 +111,6 @@
             let lguCol = headers.indexOf("lgu");
             let sportCol = headers.indexOf("sport");
 
-            // 🔹 Normalizer & regex builder
             const norm = s => (s || '').toString().replace(/\s+/g, ' ').trim();
             const makeLooseEqPattern = (raw) => {
                 const t = norm(raw);
@@ -120,7 +118,6 @@
                 return '^\\s*' + esc + '\\s*$';
             };
 
-            // Cluster filter
             $('#clusterFilter').off('change').on('change', function () {
                 const val = $(this).val();
                 if (clusterCol !== -1) {
@@ -131,7 +128,6 @@
                 }
             });
 
-            // LGU filter
             $('#lguFilter').off('change').on('change', function () {
                 const val = $(this).val();
                 if (lguCol !== -1) {
@@ -142,7 +138,6 @@
                 }
             });
 
-            // Sport filter
             $('#sportFilter').off('change').on('change', function () {
                 const val = $(this).val();
                 if (sportCol !== -1) {
@@ -174,6 +169,17 @@
                         }
                     }
                     rowIndex++;
+
+                    // 🔹 NEW FEATURE: Clicking row opens the "View" link
+                    $row.off("click").on("click", function (e) {
+                        // Avoid triggering if the user actually clicked a link/button directly
+                        if (!$(e.target).is("a, button, input")) {
+                            let viewBtn = $row.find("a:contains('View')");
+                            if (viewBtn.length) {
+                                window.open(viewBtn.attr("href"), "_blank");
+                            }
+                        }
+                    });
                 });
 
                 // Force "View" links to open in new tab
