@@ -7,8 +7,8 @@
 // @match        https://bp.psc.games/admin/*
 // @grant        GM_addStyle
 // @run-at       document-idle
-// @updateURL    https://raw.githubusercontent.com/DarizV1/bbppunderground/main/statusButtonsDarkTheme.js
-// @downloadURL  https://raw.githubusercontent.com/DarizV1/bbppunderground/main/statusButtonsDarkTheme.js
+// @updateURL    https://raw.githubusercontent.com/DarizV1/bbppunderground/refs/heads/main/statusButtonsDarkTheme.js
+// @downloadURL  https://raw.githubusercontent.com/DarizV1/bbppunderground/refs/heads/main/statusButtonsDarkTheme.js
 // ==/UserScript==
 
 
