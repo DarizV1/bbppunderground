@@ -3,7 +3,7 @@
 // @namespace    http://tampermonkey.net/
 // @version      1.6
 // @description  Check PSA for athletes, Form B for coaches, and Delegation files; show status beside file icons
-// @author       You
+// @author       Dariz Villarba
 // @match        https://bp.psc.games/admin/index.php*
 // @grant        GM_xmlhttpRequest
 // @run-at       document-end
