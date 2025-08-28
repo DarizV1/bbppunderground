@@ -1,65 +1,89 @@
 // ==UserScript==
-// @name         PSA Birth Certificate Status Checker
+// @name         File Status Checker
 // @namespace    http://tampermonkey.net/
-// @version      1.3
-// @description  Show PSA DETECTED, PSA MISSING, or PSA CHECK ERROR beside the file manager icon
-// @author       Dariz VIllarba
+// @version      1.6
+// @description  Check PSA for athletes, Form B for coaches, and Delegation files; show status beside file icons
+// @author       You
 // @match        https://bp.psc.games/admin/index.php*
-// @updateURL    https://raw.githubusercontent.com/DarizV1/bbppunderground/refs/heads/main/psaDetector.js
-// @downloadURL  https://raw.githubusercontent.com/DarizV1/bbppunderground/refs/heads/main/psaDetector.js
 // @grant        GM_xmlhttpRequest
 // @run-at       document-end
+// @updateURL    https://raw.githubusercontent.com/DarizV1/bbppunderground/refs/heads/main/psaDetector.js
+// @downloadURL  https://raw.githubusercontent.com/DarizV1/bbppunderground/refs/heads/main/psaDetector.js
 // ==/UserScript==
 
 (function() {
     'use strict';
 
-    // Find PSA Birth Certificate row
-    let psaRow = [...document.querySelectorAll("td")]
-        .find(td => td.textContent.includes("PSA Birth Certificate"))
-        ?.parentElement;
+    // Utility function to check a file and append status
+    function checkFile(fileName, fileLink, keyName) {
+        GM_xmlhttpRequest({
+            method: "HEAD",
+            url: fileLink.href,
+            onload: function(response) {
+                let statusLabel = document.createElement("span");
+                statusLabel.style.fontWeight = "bold";
+                statusLabel.style.marginLeft = "8px";
 
-    if (psaRow) {
-        let psaLink = psaRow.querySelector("a");
-        if (psaLink) {
-            let fileUrl = psaLink.href;
-
-            GM_xmlhttpRequest({
-                method: "HEAD",
-                url: fileUrl,
-                onload: function(response) {
-                    let statusLabel = document.createElement("span");
-                    statusLabel.style.fontWeight = "bold";
-                    statusLabel.style.marginLeft = "8px";
-
-                    if (response.status === 200) {
-                        console.log("✅ PSA DETECTED:", fileUrl);
-                        psaLink.style.backgroundColor = "green";
-                        statusLabel.textContent = "PSA DETECTED";
-                        statusLabel.style.color = "green";
-                    } else {
-                        console.warn("❌ PSA MISSING (status:", response.status, ")");
-                        psaLink.style.backgroundColor = "red";
-                        statusLabel.textContent = "PSA MISSING";
-                        statusLabel.style.color = "red";
-                    }
-
-                    psaLink.parentElement.appendChild(statusLabel);
-                },
-                onerror: function() {
-                    console.error("⚠️ PSA CHECK ERROR");
-                    psaLink.style.backgroundColor = "orange";
-
-                    let errorLabel = document.createElement("span");
-                    errorLabel.textContent = "PSA CHECK ERROR";
-                    errorLabel.style.color = "orange";
-                    errorLabel.style.fontWeight = "bold";
-                    errorLabel.style.marginLeft = "8px";
-                    psaLink.parentElement.appendChild(errorLabel);
+                if (response.status === 200) {
+                    fileLink.style.backgroundColor = "green";
+                    statusLabel.textContent = keyName + " DETECTED";
+                    statusLabel.style.color = "green";
+                } else {
+                    fileLink.style.backgroundColor = "red";
+                    statusLabel.textContent = keyName + " MISSING";
+                    statusLabel.style.color = "red";
                 }
-            });
-        }
-    } else {
-        console.warn("⚠️ No PSA Birth Certificate row found on this page.");
+
+                fileLink.parentElement.appendChild(statusLabel);
+            },
+            onerror: function() {
+                fileLink.style.backgroundColor = "orange";
+                let errorLabel = document.createElement("span");
+                errorLabel.textContent = keyName + " CHECK ERROR";
+                errorLabel.style.color = "orange";
+                errorLabel.style.fontWeight = "bold";
+                errorLabel.style.marginLeft = "8px";
+                fileLink.parentElement.appendChild(errorLabel);
+            }
+        });
     }
+
+    // --- Athletes Table (PSA) ---
+    let athleteRows = [...document.querySelectorAll("td")]
+        .filter(td => td.textContent.includes("PSA Birth Certificate"))
+        .map(td => td.parentElement);
+
+    athleteRows.forEach(row => {
+        let link = row.querySelector("a");
+        if (link) checkFile("PSA Birth Certificate", link, "PSA");
+    });
+
+    // --- Coaches Table (Form B) ---
+    let coachRows = [...document.querySelectorAll("table tbody tr")];
+
+    coachRows.forEach(row => {
+        let fileNameCell = row.querySelector("td:first-child");
+        let fileLink = row.querySelector("td a.btn-primary");
+        if (fileNameCell && fileLink) {
+            let fileName = fileNameCell.textContent.trim();
+            if (fileName === "Form B") {
+                checkFile(fileName, fileLink, "Form B");
+            }
+        }
+    });
+
+    // --- Delegation Table (List & Gallery) ---
+    let delegationRows = [...document.querySelectorAll("table tbody tr")];
+
+    delegationRows.forEach(row => {
+        let fileNameCell = row.querySelector("td:first-child");
+        let fileLink = row.querySelector("td a.btn-primary");
+        if (fileNameCell && fileLink) {
+            let fileName = fileNameCell.textContent.trim();
+            if (fileName === "Delegation List" || fileName === "Delegation Gallery") {
+                checkFile(fileName, fileLink, fileName);
+            }
+        }
+    });
+
 })();
