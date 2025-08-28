@@ -3,8 +3,10 @@
 // @namespace    http://tampermonkey.net/
 // @version      1.2
 // @description  Show PSA DETECTED, PSA MISSING, or PSA CHECK ERROR beside the file manager icon
-// @author       You
+// @author       Dariz VIllarba
 // @match        https://bp.psc.games/admin/index.php*
+// @updateURL    https://raw.githubusercontent.com/DarizV1/bbppunderground/refs/heads/main/psaDetector.js
+// @downloadURL  https://raw.githubusercontent.com/DarizV1/bbppunderground/refs/heads/main/psaDetector.js
 // @grant        GM_xmlhttpRequest
 // @run-at       document-end
 // ==/UserScript==
