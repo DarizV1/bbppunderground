@@ -1,14 +1,14 @@
 // ==UserScript==
 // @name         Batang Pinoy Table Enhancer
 // @namespace    http://tampermonkey.net/
-// @version      2.9
+// @version      2.10
 // @description  Enhances BP admin tables with row coloring, striped fallback rows, filters, borders, hover effect, and now row-click opens "View" in new tab.
 // @author       Dariz Villarba
 // @match        https://bp.psc.games/admin/index.php*
 // @grant        none
 // @run-at       document-idle
-// @updateURL    https://raw.githubusercontent.com/DarizV1/bbppunderground/main/bpTableEnhancer.js
-// @downloadURL  https://raw.githubusercontent.com/DarizV1/bbppunderground/main/bpTableEnhancer.js
+// @updateURL    https://raw.githubusercontent.com/DarizV1/bbppunderground/refs/heads/main/bpTableEnhancer.js
+// @downloadURL  https://raw.githubusercontent.com/DarizV1/bbppunderground/refs/heads/main/bpTableEnhancer.js
 // ==/UserScript==
 
 (function() {
