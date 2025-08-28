@@ -7,8 +7,8 @@
 // @match        https://bp.psc.games/admin/*
 // @grant        none
 // @run-at       document-idle
-// @updateURL    https://raw.githubusercontent.com/DarizV1/bbppunderground/main/selectAllFunction.js
-// @downloadURL  https://raw.githubusercontent.com/DarizV1/bbppunderground/main/selectAllFunction.js
+// @updateURL    https://raw.githubusercontent.com/DarizV1/bbppunderground/refs/heads/main/selectAllFunction.js
+// @downloadURL  https://raw.githubusercontent.com/DarizV1/bbppunderground/refs/heads/main/selectAllFunction.js
 // ==/UserScript==
 
 (function() {
