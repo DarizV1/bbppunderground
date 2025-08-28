@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         PSA Birth Certificate Status Checker
 // @namespace    http://tampermonkey.net/
-// @version      1.2
+// @version      1.3
 // @description  Show PSA DETECTED, PSA MISSING, or PSA CHECK ERROR beside the file manager icon
 // @author       Dariz VIllarba
 // @match        https://bp.psc.games/admin/index.php*
