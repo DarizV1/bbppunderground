@@ -7,8 +7,8 @@
 // @match        https://bp.psc.games/admin/*
 // @grant        none
 // @run-at       document-idle
-// @updateURL    https://raw.githubusercontent.com/DarizV1/bbppunderground/main/computeAgeDOB.js
-// @downloadURL  https://raw.githubusercontent.com/DarizV1/bbppunderground/main/computeAgeDOB.js
+// @updateURL    https://raw.githubusercontent.com/DarizV1/bbppunderground/refs/heads/main/computeAgeDOB.js
+// @downloadURL  https://raw.githubusercontent.com/DarizV1/bbppunderground/refs/heads/main/computeAgeDOB.js
 // ==/UserScript==
 (function() {
     'use strict';
