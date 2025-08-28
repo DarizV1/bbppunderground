@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         Batang Pinoy Table Enhancer
 // @namespace    http://tampermonkey.net/
-// @version      2.10
-// @description  Enhances BP admin tables with row coloring, striped fallback rows, filters, borders, hover effect, and now row-click opens "View" in new tab.
+// @version      3.0
+// @description  Enhances BP admin tables: row coloring, striped fallback, filters, borders, hover effect, styled header checkbox, select-all support, row-click "View" open in new tab.
 // @author       Dariz Villarba
 // @match        https://bp.psc.games/admin/index.php*
 // @grant        none
@@ -11,7 +11,7 @@
 // @downloadURL  https://raw.githubusercontent.com/DarizV1/bbppunderground/refs/heads/main/bpTableEnhancer.js
 // ==/UserScript==
 
-(function() {
+(function () {
     'use strict';
 
     // 🔹 Sport → Softer pastel-style colors
@@ -47,10 +47,10 @@
 
     function getContrastYIQ(hexcolor) {
         hexcolor = hexcolor.replace("#", "");
-        let r = parseInt(hexcolor.substr(0,2),16);
-        let g = parseInt(hexcolor.substr(2,2),16);
-        let b = parseInt(hexcolor.substr(4,2),16);
-        let yiq = ((r*299)+(g*587)+(b*114))/1000;
+        let r = parseInt(hexcolor.substr(0, 2), 16);
+        let g = parseInt(hexcolor.substr(2, 2), 16);
+        let b = parseInt(hexcolor.substr(4, 2), 16);
+        let yiq = ((r * 299) + (g * 587) + (b * 114)) / 1000;
         return (yiq >= 128) ? "#000000" : "#ffffff";
     }
 
@@ -64,10 +64,12 @@
             #list th, #list td {
                 border: 1px solid #bbb !important;
                 padding: 6px !important;
+                vertical-align: middle !important;
             }
             #list th {
                 background-color: #f5f5f5 !important;
                 font-weight: bold;
+                text-align: center;
             }
             #list tbody tr.striped-even {
                 background-color: #f9f9f9 !important;
@@ -80,6 +82,17 @@
                 font-style: italic !important;
                 text-decoration: underline;
                 cursor: pointer;
+            }
+            /* ✅ Styled header checkbox */
+            #selectAll {
+                width: 20px;
+                height: 20px;
+                cursor: pointer;
+                transform: scale(1.2);
+            }
+            #selectAll:hover {
+                outline: 2px solid #007bff;
+                outline-offset: 2px;
             }
         `;
         document.head.appendChild(style);
@@ -106,7 +119,7 @@
 
             table.buttons().container().appendTo('#list_wrapper .col-md-6:eq(0)');
 
-            let headers = $("#list thead th").map(function(){ return $(this).text().trim().toLowerCase(); }).get();
+            let headers = $("#list thead th").map(function () { return $(this).text().trim().toLowerCase(); }).get();
             let clusterCol = headers.indexOf("cluster");
             let lguCol = headers.indexOf("lgu");
             let sportCol = headers.indexOf("sport");
@@ -118,6 +131,7 @@
                 return '^\\s*' + esc + '\\s*$';
             };
 
+            // 🔹 Filters
             $('#clusterFilter').off('change').on('change', function () {
                 const val = $(this).val();
                 if (clusterCol !== -1) {
@@ -148,12 +162,14 @@
                 }
             });
 
-            // Row coloring + striped fallback
+            // 🔹 Handle draw (row styling + click behavior)
             table.on('draw', function () {
                 let rowIndex = 0;
                 table.rows().every(function () {
                     let data = this.data();
                     let $row = $(this.node());
+
+                    // Sport coloring
                     if (sportCol !== -1 && data[sportCol]) {
                         let sport = data[sportCol].trim();
                         let color = sportColors[sport];
@@ -164,30 +180,36 @@
                                 "color": textColor
                             }).removeClass("striped-even striped-odd");
                         } else {
-                            $row.css({"background-color": "", "color": ""})
+                            $row.css({ "background-color": "", "color": "" })
                                 .addClass(rowIndex % 2 === 0 ? "striped-even" : "striped-odd");
                         }
                     }
                     rowIndex++;
 
-                    // 🔹 NEW FEATURE: Clicking row opens the "View" link
+                    // ✅ Row click opens "View"
                     $row.off("click").on("click", function (e) {
-                        // Avoid triggering if the user actually clicked a link/button directly
-                        if (!$(e.target).is("a, button, input")) {
-                            let viewBtn = $row.find("a:contains('View')");
-                            if (viewBtn.length) {
-                                window.open(viewBtn.attr("href"), "_blank");
-                            }
+                        if ($(e.target).is("a, button, input, th, label") || $(e.target).closest("th").length) {
+                            return;
+                        }
+                        let viewBtn = $row.find("a:contains('View')");
+                        if (viewBtn.length) {
+                            window.open(viewBtn.attr("href"), "_blank");
                         }
                     });
                 });
 
-                // Force "View" links to open in new tab
+                // Always open "View" in new tab
                 $('#list a').each(function () {
                     if ($(this).text().trim().toLowerCase() === "view") {
                         $(this).attr("target", "_blank");
                     }
                 });
+            });
+
+            // ✅ Select all checkbox functionality
+            $(document).off("change", "#selectAll").on("change", "#selectAll", function () {
+                let checked = $(this).is(":checked");
+                $("#list tbody input[type='checkbox']").prop("checked", checked);
             });
 
             table.draw();
