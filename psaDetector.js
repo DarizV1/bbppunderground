@@ -1,8 +1,8 @@
 // ==UserScript==
-// @name         File Status Checker
+// @name         FILE UPLOAD (CHECKER)
 // @namespace    http://tampermonkey.net/
-// @version      1.6
-// @description  Check PSA for athletes, Form B for coaches, and Delegation files; show status beside file icons
+// @version      1.8
+// @description  Check PSA, Form B, and Delegation files; show status + file type + file size beside file icons
 // @author       Dariz Villarba
 // @match        https://bp.psc.games/admin/index.php*
 // @grant        GM_xmlhttpRequest
@@ -14,7 +14,27 @@
 (function() {
     'use strict';
 
-    // Utility function to check a file and append status
+    // Utility: get file extension
+    function getFileExtension(url) {
+        try {
+            let cleanUrl = url.split("?")[0].split("#")[0]; // strip query/hash
+            let parts = cleanUrl.split(".");
+            return parts.length > 1 ? "." + parts.pop().toLowerCase() : "Unknown";
+        } catch (e) {
+            return "Unknown";
+        }
+    }
+
+    // Utility: format file size
+    function formatFileSize(bytes) {
+        if (!bytes || isNaN(bytes)) return "Unknown size";
+        const sizes = ["B", "KB", "MB", "GB"];
+        let i = Math.floor(Math.log(bytes) / Math.log(1024));
+        let size = (bytes / Math.pow(1024, i)).toFixed(1);
+        return `${size} ${sizes[i]}`;
+    }
+
+    // Main checker
     function checkFile(fileName, fileLink, keyName) {
         GM_xmlhttpRequest({
             method: "HEAD",
@@ -24,13 +44,16 @@
                 statusLabel.style.fontWeight = "bold";
                 statusLabel.style.marginLeft = "8px";
 
+                let fileExt = getFileExtension(fileLink.href);
+                let fileSize = formatFileSize(response.responseHeaders.match(/content-length:\s*(\d+)/i)?.[1]);
+
                 if (response.status === 200) {
                     fileLink.style.backgroundColor = "green";
-                    statusLabel.textContent = keyName + " DETECTED";
+                    statusLabel.textContent = `${keyName} DETECTED (${fileExt}, ${fileSize})`;
                     statusLabel.style.color = "green";
                 } else {
                     fileLink.style.backgroundColor = "red";
-                    statusLabel.textContent = keyName + " MISSING";
+                    statusLabel.textContent = `${keyName} MISSING`;
                     statusLabel.style.color = "red";
                 }
 
