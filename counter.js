@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         DROPDOWN - Counter
 // @namespace    http://tampermonkey.net/
-// @version      2.4
-// @description  LGU counts + color coding, Excel-ready copy, and Sport dropdown counts that switch between GLOBAL (LGU=All) and FILTERED (LGU=specific). Robust to DataTable re-inits.
+// @version      2.5
+// @description  LGU counts + color coding, Excel-ready copy, and Sport dropdown counts that switch between GLOBAL (LGU=All) and FILTERED (LGU=specific). Robust to DataTable re-inits. Sports with 0 = red, with value = bold dark green.
 // @author       Dariz Villarba
 // @match        https://bp.psc.games/admin/index.php*
 // @grant        none
@@ -67,6 +67,7 @@
       if (normalize(base) === 'all' || base === '') {
         opt.textContent = 'All';
         opt.style.color = '';
+        opt.style.fontWeight = '';
         return;
       }
 
@@ -188,15 +189,25 @@
       sportCounts[key] = (sportCounts[key] || 0) + 1;
     });
 
-    // update dropdown labels
+    // update dropdown labels with styles
     Array.from(sportSel.options).forEach(opt => {
       const base = opt.dataset.baseText;
       if (normalize(base) === 'all' || base === '') {
         opt.textContent = 'All';
+        opt.style.color = '';
+        opt.style.fontWeight = '';
         return;
       }
       const count = sportCounts[normalize(base)] || 0;
       opt.textContent = `${base} (${count})`;
+
+      if (count === 0) {
+        opt.style.color = 'red';
+        opt.style.fontWeight = 'normal';
+      } else {
+        opt.style.color = 'darkgreen';
+        opt.style.fontWeight = 'bold';
+      }
     });
   }
 
