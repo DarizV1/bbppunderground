@@ -3,7 +3,7 @@
 // @namespace    http://tampermonkey.net/
 // @version      1.2
 // @description  Download athlete photo with proper filename, open remove.bg, and allow drag-drop to replace athlete photo
-// @author       You
+// @author       Dariz VIllarba
 // @match        https://bp.psc.games/admin/index.php?page=*
 // @grant        GM_download
 // @grant        GM_openInTab
