@@ -7,6 +7,9 @@
 // @match        https://bp.psc.games/admin/index.php?page=*
 // @grant        GM_download
 // @grant        GM_openInTab
+// @run-at       document-idle
+// @updateURL    https://raw.githubusercontent.com/DarizV1/bbppunderground/refs/heads/main/local_download_remove_bg.js
+// @downloadURL  https://raw.githubusercontent.com/DarizV1/bbppunderground/refs/heads/main/local_download_remove_bg.js
 // ==/UserScript==
 
 (function() {
