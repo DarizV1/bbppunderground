@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Athlete Photo Local Downloader + DragDrop Upload
 // @namespace    http://tampermonkey.net/
-// @version      1.2
+// @version      1.3
 // @description  Download athlete photo with proper filename, open remove.bg, and allow drag-drop to replace athlete photo
 // @author       Dariz VIllarba
 // @match        https://bp.psc.games/admin/index.php?page=*
@@ -29,7 +29,7 @@
             left: '5px',
             zIndex: '9999',
             padding: '6px 12px',
-            background: '#28a745',
+            background: '#0000FF',
             color: '#fff',
             border: 'none',
             borderRadius: '5px',
@@ -69,6 +69,9 @@
         // --- Drag & Drop Upload ---
         img.addEventListener("dragover", (e) => {
             e.preventDefault();
+            if (e.dataTransfer) {
+                e.dataTransfer.dropEffect = "copy";
+            }
             img.style.border = "3px dashed #28a745"; // visual hint
         });
 
@@ -76,14 +79,35 @@
             img.style.border = "";
         });
 
-        img.addEventListener("drop", (e) => {
+        img.addEventListener("drop", async (e) => {
             e.preventDefault();
             img.style.border = "";
 
-            const file = e.dataTransfer.files[0];
+            const input = document.querySelector("#upload_image"); // hidden file input
+            if (!input) {
+                console.error("File input #upload_image not found");
+                return;
+            }
+
+            let file = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+
+            if (!file && e.dataTransfer) {
+                const droppedUrl = e.dataTransfer.getData("text/uri-list") || e.dataTransfer.getData("text/plain");
+                if (droppedUrl) {
+                    try {
+                        const response = await fetch(droppedUrl, { mode: "cors" });
+                        const blob = await response.blob();
+                        const inferredName = (droppedUrl.split("/").pop() || "dropped-image").split("?")[0] || "dropped-image";
+                        const fileName = inferredName || "dropped-image.png";
+                        file = new File([blob], fileName, { type: blob.type || "image/png" });
+                    } catch (err) {
+                        console.error("Failed to fetch dropped URL:", err);
+                    }
+                }
+            }
+
             if (!file) return;
 
-            const input = document.querySelector("#upload_image"); // hidden file input
             const dataTransfer = new DataTransfer();
             dataTransfer.items.add(file);
             input.files = dataTransfer.files;
