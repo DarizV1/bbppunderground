@@ -8,6 +8,8 @@
 // @grant        GM_setValue
 // @grant        GM_getValue
 // @run-at       document-idle
+// @updateURL    https://raw.githubusercontent.com/DarizV1/bbppunderground/refs/heads/main/Highlight%20Joined%20Events
+// @downloadURL  https://raw.githubusercontent.com/DarizV1/bbppunderground/refs/heads/main/Highlight%20Joined%20Events
 // ==/UserScript==
 
 (function () {
