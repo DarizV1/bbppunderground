@@ -1,0 +1,93 @@
+// ==UserScript==
+// @name         Batang Pinoy Highlight Joined Events (Main+Sub only)
+// @namespace    http://tampermonkey.net/
+// @version      3.4
+// @description  Highlight Update Events rows that match Profile events by Main/Sub only (ignore Age Category differences).
+// @match        https://bp.psc.games/admin/index.php*
+// @match        https://bp.psc.games/admin/bp_edit_events.php*
+// @grant        GM_setValue
+// @grant        GM_getValue
+// @run-at       document-idle
+// ==/UserScript==
+
+(function () {
+  'use strict';
+
+  function normalizeText(s) {
+    return (s || "")
+      .replace(/\u00A0/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim()
+      .toUpperCase();
+  }
+
+  function extractMainWithoutSeed(raw) {
+    if (!raw) return '';
+    let txt = normalizeText(raw);
+    // remove trailing time formats like "32.14" or "3:10.14"
+    txt = txt.replace(/\d+:\d+\.\d+$|\d+\.\d+$/g, '').trim();
+    return txt;
+  }
+
+  // Save profile events
+  function readProfileAndSave() {
+    const rows = document.querySelectorAll('#custom-tabs-one-profile table.table tbody tr');
+    const keys = [];
+    rows.forEach(r => {
+      const tds = r.querySelectorAll('td, th');
+      const main = extractMainWithoutSeed(tds[0]?.textContent || '');
+      const sub  = normalizeText(tds[1]?.textContent || '');
+      if (main) keys.push({ main, sub });
+    });
+    GM_setValue('bp_joined_events_simple', keys);
+  }
+
+  // Highlight events in Update Events table
+  function highlightTable(root) {
+    const saved = GM_getValue('bp_joined_events_simple', []);
+    if (!saved.length) return;
+
+    const rows = root.querySelectorAll('table.table tbody tr');
+    rows.forEach(tr => {
+      const tds = tr.querySelectorAll('td');
+      if (!tds.length) return;
+
+      const main = extractMainWithoutSeed(tds[1]?.childNodes[0]?.textContent || tds[1]?.textContent || '');
+      const sub  = normalizeText(tds[2]?.textContent || '');
+
+      for (const ev of saved) {
+        if (ev.main === main && ev.sub === sub) {
+          tr.style.backgroundColor = '#d4edda'; // green
+          tr.style.borderLeft = '4px solid #28a745';
+          break;
+        }
+      }
+    });
+  }
+
+  function watchModal() {
+    const modal = document.getElementById('uni_modal');
+    if (!modal) return;
+    const mo = new MutationObserver(() => {
+      const table = modal.querySelector('table.table tbody tr');
+      if (table) setTimeout(() => highlightTable(modal), 100);
+    });
+    mo.observe(modal, { childList: true, subtree: true });
+  }
+
+  function init() {
+    if (location.pathname.includes('index.php')) {
+      readProfileAndSave();
+      watchModal();
+    }
+    if (location.pathname.includes('bp_edit_events.php')) {
+      highlightTable(document);
+    }
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+})();
