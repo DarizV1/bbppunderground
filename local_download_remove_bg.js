@@ -1,12 +1,11 @@
 // ==UserScript==
-// @name         Athlete Photo Local Downloader + DragDrop Upload
+// @name         Athlete Photo Local Downloader & DragDrop Upload
 // @namespace    http://tampermonkey.net/
-// @version      1.3
-// @description  Download athlete photo with proper filename, open remove.bg, and allow drag-drop to replace athlete photo
+// @version      1.4
+// @description  Download athlete photo with a proper filename and allow drag-and-drop to replace the photo.
 // @author       Dariz VIllarba
 // @match        https://bp.psc.games/admin/index.php?page=*
 // @grant        GM_download
-// @grant        GM_openInTab
 // @run-at       document-idle
 // @updateURL    https://raw.githubusercontent.com/DarizV1/bbppunderground/refs/heads/main/local_download_remove_bg.js
 // @downloadURL  https://raw.githubusercontent.com/DarizV1/bbppunderground/refs/heads/main/local_download_remove_bg.js
@@ -21,6 +20,7 @@
 
         // --- Save Button ---
         const btn = document.createElement('button');
+        btn.type = 'button'; // ✅ prevents form submission (no page refresh)
         btn.innerText = '💾';
         btn.id = 'save-photo-btn';
         Object.assign(btn.style, {
@@ -62,8 +62,6 @@
                 ontimeout: () => console.error("Download timeout"),
                 onerror: (err) => console.error("Download error:", err)
             });
-
-            GM_openInTab("https://www.remove.bg", { active: true });
         });
 
         // --- Drag & Drop Upload ---
@@ -117,9 +115,10 @@
         });
     }
 
-    // Observe DOM
+    // Observe DOM changes to add the button if the image loads dynamically
     const observer = new MutationObserver(addSaveButton);
     observer.observe(document.body, { childList: true, subtree: true });
 
+    // Initial attempt to add the button on page load
     addSaveButton();
 })();
