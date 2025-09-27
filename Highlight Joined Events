@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Batang Pinoy Highlight Joined Events (Main+Sub only)
 // @namespace    http://tampermonkey.net/
-// @version      3.5
+// @version      3.6
 // @description  Highlight Update Events rows that match Profile events by Main/Sub only (ignore Age Category differences).
 // @match        https://bp.psc.games/admin/index.php*
 // @match        https://bp.psc.games/admin/bp_edit_events.php*
@@ -30,9 +30,22 @@
       // also remove trailing parenthetical that contains a time-like value
       txt = txt
         .replace(/\((?:\s*\d+(?::\d+)?(?:\.\d+)?)\s*\)$/g, '')
-        .replace(/\d+:\d+\.\d+$|\d+\.\d+$/g, '')
+        // remove trailing mm:ss(.ss) or ss(.ss) or bare integer times at end
+        .replace(/(?:\b\d{1,2}:\d{2}(?:\.\d+)?|\b\d+(?:\.\d+)?)(?=\s*$)/, '')
+        // collapse distance spacing like "200 M" -> "200M"
+        .replace(/(\d)\s*M\b/g, '$1M')
         .trim();
       return txt;
+    }
+
+    function normalizeSubCategory(raw) {
+      let sub = normalizeText(raw);
+      // unify MIXED AGE GROUP and AGE GROUP as AGE GROUP
+      if (sub.startsWith('MIXED AGE GROUP')) sub = 'AGE GROUP';
+      // strip trailing explicit age ranges
+      sub = sub.replace(/\b\d+\s*-\s*\d+\s*YEARS?\s*OLD\b/g, '').trim();
+      if (sub === '') sub = 'AGE GROUP';
+      return sub;
     }
   
     function ensureStyles() {
@@ -67,7 +80,7 @@
       rows.forEach(r => {
         const tds = r.querySelectorAll('td, th');
         const main = extractMainWithoutSeed(tds[0]?.textContent || '');
-        const sub  = normalizeText(tds[1]?.textContent || '');
+        const sub  = normalizeSubCategory(tds[1]?.textContent || '');
         if (main) keySet.add(composeKey(main, sub));
       });
       GM_setValue('bp_joined_events_keys', Array.from(keySet));
@@ -83,8 +96,15 @@
         const tds = tr.querySelectorAll('td');
         if (!tds.length) return;
   
-        const main = extractMainWithoutSeed(tds[1]?.childNodes[0]?.textContent || tds[1]?.textContent || '');
-        const sub  = normalizeText(tds[2]?.textContent || '');
+        const tryMain = (i) => extractMainWithoutSeed(tds[i]?.childNodes[0]?.textContent || tds[i]?.textContent || '');
+        const trySub  = (i) => normalizeSubCategory(tds[i]?.textContent || '');
+
+        // try typical positions [1]=main, [2]=sub; fallback to neighbors if needed
+        let main = tryMain(1);
+        let sub  = trySub(2);
+
+        if (!main && tds.length > 0) main = tryMain(0);
+        if (!sub && tds.length > 3) sub = trySub(3);
   
         tr.classList.remove('bp-ev-hit');
         if (savedKeys.has(composeKey(main, sub))) {
